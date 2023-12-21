@@ -1,0 +1,39 @@
+---
+- name: ELK Upgrade Playbook
+  hosts: all
+  gather_facts: true
+  become: true
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Pre-Upgrade Tasks for Cold Nodes
+      include_tasks: pre_upgrade_cold.yml
+      when: "'cold' in inventory_hostname"
+
+    - name: Upgrade Tasks for Cold Nodes
+      include_tasks: upgrade-elasticsearch-cold.yml
+      when: "'cold' in inventory_hostname"
+
+    - name: Pre-Upgrade Tasks for Data Nodes
+      include_tasks: pre_upgrade_data.yml
+      when: "'data' in inventory_hostname"
+
+    - name: Upgrade Elastic on Data Nodes
+      include_tasks: upgrade-elasticsearch-data.yml
+      when: "'data' in inventory_hostname"
+
+    - name: Pre-Upgrade Tasks for Master Nodes
+      include_tasks: pre_upgrade_master.yml
+      when: "'master' in inventory_hostname"
+
+    - name: Upgrade Elastic on Data Nodes
+      include_tasks: upgrade-elasticsearch-master.yml
+      when: "'master' in inventory_hostname"
+
+    - name: Post-Upgrade Steps
+      include_tasks: post-upgrade-elasticsearch.yml
+
+    - name: Upgrade Kibana
+      include_tasks: upgrade-kibana.yml
+      when: "'kibana' in inventory_hostname"

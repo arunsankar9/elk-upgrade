@@ -1,0 +1,11 @@
+[master]
+master1
+
+[data]
+data1
+
+[cold]
+cold1
+
+[kibana]
+kibana1

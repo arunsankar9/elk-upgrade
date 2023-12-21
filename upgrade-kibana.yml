@@ -1,0 +1,41 @@
+- hosts: kibana
+  tasks:
+    - name: Stop Kibana service
+      service:
+        name: kibana
+        state: stopped
+
+    - name: Download new Kibana package
+      get_url:
+        url: https://artifacts.elastic.co/downloads/kibana/kibana-{{ elk_version }}-linux-x86_64.tar.gz
+        dest: /tmp/kibana.tar.gz
+
+    - name: Unarchive new Kibana package
+      unarchive:
+        src: /tmp/kibana.tar.gz
+        dest: /usr/share/kibana
+        remote_src: yes
+
+    - name: Replace Kibana configuration (if needed)
+      copy:
+        src: kibana.yml
+        dest: /etc/kibana/kibana.yml
+        backup: yes  # Create a backup of the existing configuration
+
+    - name: Start Kibana service
+      service:
+        name: kibana
+        state: started
+
+    - name: Wait for Kibana to start
+      uri:
+        url: http://localhost:5601/status
+        status_code: 200
+
+    - name: Check Kibana version
+      uri:
+        url: http://localhost:5601/api/status
+        register: kibana_status
+    - name: Verify Kibana version
+      assert:
+        that: kibana_status.json.version.number == "{{ elk_version }}"

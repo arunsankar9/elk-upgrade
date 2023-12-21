@@ -1,0 +1,29 @@
+---
+- hosts: data
+  serial: 1  # Upgrade nodes one at a time
+  tasks:
+    - name: Download new Elasticsearch package
+      get_url:
+        url: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ elk_version }}-linux-x86_64.tar.gz
+        dest: /tmp/elasticsearch.tar.gz
+    - name: Stop Elasticsearch service
+      service:
+        name: elasticsearch
+        state: stopped
+    - name: Install new Elasticsearch version
+      unarchive:
+        src: /tmp/elasticsearch.tar.gz
+        dest: /usr/share/elasticsearch
+        remote_src: yes
+    - name: Start Elasticsearch service
+      service:
+        name: elasticsearch
+        state: started
+    - name: Wait for node to join cluster
+      uri:
+        url: http://localhost:9200/_cluster/health
+        status_code: 200
+    - name: Monitor cluster health
+      uri:
+        url: http://localhost:9200/_cluster/health?wait_for_status=green&timeout=300s
+        status_code: 200

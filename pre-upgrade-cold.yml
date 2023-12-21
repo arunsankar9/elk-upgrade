@@ -1,0 +1,33 @@
+- name: Pre-Upgrade Tasks for Cold Nodes
+  hosts: cold
+  tasks:
+    - name: Backup Elasticsearch configuration
+      ansible.builtin.copy:
+        src: "/etc/elasticsearch/elasticsearch.yml"
+        dest: "/tmp/elasticsearch.yml.backup"
+      become: true
+
+    - name: Disable shard allocation
+      uri:
+        url: http://localhost:9200/_cluster/settings
+        method: PUT
+        body: '{"transient": {"cluster.routing.allocation.enable": "none"}}'
+        status_code: 200
+
+    - name: Flush indices
+      uri:
+        url: http://localhost:9200/_flush
+        method: POST
+        status_code: 200
+
+    - name: Close indices (optional)
+      uri:
+        url: http://localhost:9200/_all/_close
+        method: POST
+        status_code: 200
+
+    - name: Wait for connections to dry out
+      wait_for:
+        port: 9200
+        state: stopped
+        timeout: 300
